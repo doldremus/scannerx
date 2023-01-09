@@ -1,11 +1,11 @@
 # scannerx
-A scanner plugin that uses CameraX on Android and native API on iOS. The scanner preview widget can be customized
+Flutter scanner plugin that uses CameraX on Android and native API on iOS. The scanner preview widget can be customized
 
 ## Getting Started
-Look code example
+Check out the code example
 
-## Plugin develop
+## Plugin development
 ```
-#generates plugin files
+#generate plugin files
 dart run prebuild.dart
 ```

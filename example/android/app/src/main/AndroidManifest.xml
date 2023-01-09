@@ -1,5 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="dev.doldremus.scannerx_example">
+
+   <uses-permission android:name="android.permission.CAMERA"/>
+
    <application
         android:label="scannerx_example"
         android:name="${applicationName}"

@@ -2,14 +2,14 @@ group 'dev.doldremus.scannerx'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.6.10'
+    ext.kotlin_version = '1.7.20'
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.1.2'
+        classpath 'com.android.tools.build:gradle:7.3.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -25,7 +25,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -41,6 +41,13 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
     }
+}
+
+dependencies {
+    implementation "androidx.camera:camera-camera2:1.2.0"
+    implementation "androidx.camera:camera-lifecycle:1.2.0"
+    implementation "androidx.camera:camera-mlkit-vision:1.2.0-beta02"
+    implementation 'com.google.mlkit:barcode-scanning:17.0.3'
 }

@@ -1,8 +1,7 @@
+library camerax;
 
-import 'scannerx_platform_interface.dart';
-
-class Scannerx {
-  Future<String?> getPlatformVersion() {
-    return ScannerxPlatform.instance.getPlatformVersion();
-  }
-}
+export 'src/scanner.dart';
+export 'src/pigeon_scanner.dart';
+export 'src/pigeon_barcode.dart';
+export 'src/pigeon_logger.dart';
+export 'src/types.dart';
