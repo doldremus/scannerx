@@ -45,7 +45,7 @@ fun logError(api: LoggerFlutterApi?, exception: Throwable) {
         className = exception.javaClass.simpleName,
         cause = exception.cause.toString(),
         stackTrace = Log.getStackTraceString(exception),
-        description = exception.toString(),
+        message = exception.message,
         isCritical = true,
     )
 

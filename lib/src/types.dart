@@ -76,3 +76,24 @@ class Barcode extends RawBarcode {
 
   final List<Offset>? displaySpaceCorners;
 }
+
+class ScannerError implements Error {
+  ScannerError({this.className, this.cause, this.message, required this.isCritical, this.stackTrace});
+
+  final String? className;
+  final String? cause;
+  final String? message;
+  final bool isCritical;
+
+  @override
+  final StackTrace? stackTrace;
+
+  @override
+  String toString() {
+    var msg = '$runtimeType: ${className ?? ''} ${message ?? ''}';
+    if (stackTrace != null) {
+      msg += '\nSource stack:\n$stackTrace';
+    }
+    return msg;
+  }
+}

@@ -38,7 +38,7 @@ class ScannerPageState extends State<ScannerPage> with SingleTickerProviderState
     scannerController.dispose();
   }
 
-  onPlatformError(LoggerError error) {
+  onPlatformError(ScannerError error) {
     switch (error.className) {
       case 'CameraAccessDenied':
       case 'CameraAccessPermanentlyDenied':

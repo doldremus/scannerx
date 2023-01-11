@@ -23,8 +23,8 @@ class LoggerError {
   LoggerError({
     this.className,
     this.cause,
+    this.message,
     this.stackTrace,
-    this.description,
     required this.isCritical,
   });
 
@@ -32,9 +32,9 @@ class LoggerError {
 
   String? cause;
 
-  String? stackTrace;
+  String? message;
 
-  String? description;
+  String? stackTrace;
 
   bool isCritical;
 
@@ -42,8 +42,8 @@ class LoggerError {
     return <Object?>[
       className,
       cause,
+      message,
       stackTrace,
-      description,
       isCritical,
     ];
   }
@@ -53,8 +53,8 @@ class LoggerError {
     return LoggerError(
       className: result[0] as String?,
       cause: result[1] as String?,
-      stackTrace: result[2] as String?,
-      description: result[3] as String?,
+      message: result[2] as String?,
+      stackTrace: result[3] as String?,
       isCritical: result[4]! as bool,
     );
   }

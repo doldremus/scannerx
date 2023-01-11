@@ -53,7 +53,7 @@ class Scanner extends StatelessWidget {
 
 abstract class ScannerController {
   factory ScannerController({
-    Function(LoggerError error)? onPlatformError,
+    Function(ScannerError error)? onPlatformError,
     LogLevel? logLevel,
   }) =>
       _ScannerController(
@@ -81,7 +81,7 @@ abstract class ScannerController {
 }
 
 class _ScannerController implements ScannerController {
-  _ScannerController({Function(LoggerError error)? onPlatformError, LogLevel? logLevel}) {
+  _ScannerController({Function(ScannerError error)? onPlatformError, LogLevel? logLevel}) {
     _scannerHostApi = ScannerHostApi();
 
     _barcodeFlutterApi = _BarcodeFlutterApiImpl(this);
@@ -199,15 +199,29 @@ class _BarcodeFlutterApiImpl implements BarcodeFlutterApi {
 class _LoggerFlutterApiImpl implements LoggerFlutterApi {
   _LoggerFlutterApiImpl(this.handler, this.logLevel);
 
-  final void Function(LoggerError error)? handler;
+  final void Function(ScannerError error)? handler;
   final LogLevel logLevel;
 
   @override
   void logError(LoggerError error) {
     if (error.isCritical ? (LogLevel.critical.index <= logLevel.index) : (LogLevel.error.index <= logLevel.index)) {
-      debugPrint('Scanner ${error.className} \n ${error.cause} \n ${error.description} \n ${error.stackTrace}');
+      String msg = 'ScannerError ${error.className}';
+      if(error.cause != null) msg += '\nCause: ${error.cause}';
+      if(error.message != null) msg += '\n${error.message}';
+      if(error.stackTrace != null) msg += '\n${error.stackTrace}';
+
+      debugPrint(msg);
     }
-    if (handler != null) handler!(error);
+
+    if (handler != null) {
+      handler!(ScannerError(
+        className: error.className,
+        cause: error.cause,
+        message: error.message,
+        stackTrace: error.stackTrace != null ? StackTrace.fromString(error.stackTrace!) : null,
+        isCritical: error.isCritical,
+      ));
+    }
   }
 
   @override

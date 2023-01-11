@@ -29,22 +29,22 @@ enum LogLevel: Int {
 struct LoggerError {
   var className: String? = nil
   var cause: String? = nil
+  var message: String? = nil
   var stackTrace: String? = nil
-  var description: String? = nil
   var isCritical: Bool
 
   static func fromList(_ list: [Any?]) -> LoggerError? {
     let className = list[0] as? String 
     let cause = list[1] as? String 
-    let stackTrace = list[2] as? String 
-    let description = list[3] as? String 
+    let message = list[2] as? String 
+    let stackTrace = list[3] as? String 
     let isCritical = list[4] as! Bool
 
     return LoggerError(
       className: className,
       cause: cause,
+      message: message,
       stackTrace: stackTrace,
-      description: description,
       isCritical: isCritical
     )
   }
@@ -52,8 +52,8 @@ struct LoggerError {
     return [
       className,
       cause,
+      message,
       stackTrace,
-      description,
       isCritical,
     ]
   }

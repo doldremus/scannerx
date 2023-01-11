@@ -35,8 +35,8 @@ enum class LogLevel(val raw: Int) {
 data class LoggerError (
   val className: String? = null,
   val cause: String? = null,
+  val message: String? = null,
   val stackTrace: String? = null,
-  val description: String? = null,
   val isCritical: Boolean
 
 ) {
@@ -45,19 +45,19 @@ data class LoggerError (
     fun fromList(list: List<Any?>): LoggerError {
       val className = list[0] as? String
       val cause = list[1] as? String
-      val stackTrace = list[2] as? String
-      val description = list[3] as? String
+      val message = list[2] as? String
+      val stackTrace = list[3] as? String
       val isCritical = list[4] as Boolean
 
-      return LoggerError(className, cause, stackTrace, description, isCritical)
+      return LoggerError(className, cause, message, stackTrace, isCritical)
     }
   }
   fun toList(): List<Any?> {
     return listOf<Any?>(
       className,
       cause,
+      message,
       stackTrace,
-      description,
       isCritical,
     )
   }
