@@ -273,9 +273,9 @@ class ScannerHostApi {
     }
   }
 
-  Future<RawScannerDescription?> init(ScannerOptions arg_options) async {
+  Future<RawScannerDescription?> initialize(ScannerOptions arg_options) async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.ScannerHostApi.init', codec,
+        'dev.flutter.pigeon.ScannerHostApi.initialize', codec,
         binaryMessenger: _binaryMessenger);
     final List<Object?>? replyList =
         await channel.send(<Object?>[arg_options]) as List<Object?>?;

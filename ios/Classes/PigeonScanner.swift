@@ -224,7 +224,7 @@ class ScannerHostApiCodec: FlutterStandardMessageCodec {
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol ScannerHostApi {
   func requestPermissions(completion: @escaping (PermissionsResponse) -> Void)
-  func init(options: ScannerOptions, completion: @escaping (RawScannerDescription?) -> Void)
+  func initialize(options: ScannerOptions, completion: @escaping (RawScannerDescription?) -> Void)
   func dispose(completion: @escaping () -> Void)
   func hasFlashlight() -> Bool
   func getFlashlightState() -> Bool
@@ -247,17 +247,17 @@ class ScannerHostApiSetup {
     } else {
       requestPermissionsChannel.setMessageHandler(nil)
     }
-    let initChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.ScannerHostApi.init", binaryMessenger: binaryMessenger, codec: codec)
+    let initializeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.ScannerHostApi.initialize", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      initChannel.setMessageHandler { message, reply in
+      initializeChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
         let optionsArg = args[0] as! ScannerOptions
-        api.init(options: optionsArg) { result in
+        api.initialize(options: optionsArg) { result in
           reply(wrapResult(result))
         }
       }
     } else {
-      initChannel.setMessageHandler(nil)
+      initializeChannel.setMessageHandler(nil)
     }
     let disposeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.ScannerHostApi.dispose", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
