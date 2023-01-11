@@ -17,11 +17,12 @@ import java.nio.ByteBuffer
 /** Generated class from Pigeon. */
 
 enum class LogLevel(val raw: Int) {
-  CRITICAL(0),
-  ERROR(1),
-  WARNING(2),
-  INFORMATIONAL(3),
-  VERBOSE(4);
+  NONE(0),
+  CRITICAL(1),
+  ERROR(2),
+  WARNING(3),
+  INFORMATIONAL(4),
+  VERBOSE(5);
 
   companion object {
     fun ofRaw(raw: Int): LogLevel? {

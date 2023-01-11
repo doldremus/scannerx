@@ -2,22 +2,28 @@ import 'dart:async';
 import 'dart:ui';
 import 'dart:ui' as ui;
 
-import 'package:scannerx/scannerx.dart';
 import 'package:flutter/material.dart';
+import 'package:scannerx/scannerx.dart';
 
 class BarcodeDetector extends StatefulWidget {
   const BarcodeDetector({
     required this.description,
     required this.barcodesStream,
     this.onDetected,
+    this.filter,
     this.drawDebug = false,
+    this.detectorRect,
+    this.overlayOptions,
     super.key,
   });
 
   final ScannerDescription description;
   final Stream<List<Barcode>> barcodesStream;
   final void Function(List<Barcode> barcodes)? onDetected;
+  final bool Function(Barcode barcode)? filter;
   final bool drawDebug;
+  final DetectorRect? detectorRect;
+  final OverlayOptions? overlayOptions;
 
   @override
   State<BarcodeDetector> createState() => _BarcodeDetectorState();
@@ -31,7 +37,7 @@ class _BarcodeDetectorState extends State<BarcodeDetector> {
   @override
   void initState() {
     super.initState();
-    detectorRect = DetectorRect(widget.description, 0.7);
+    detectorRect = widget.detectorRect ?? DetectorRect(widget.description, 0.7);
     detectorStreamController = StreamController.broadcast();
     subscription = widget.barcodesStream.listen(onBarcodes);
   }
@@ -49,7 +55,10 @@ class _BarcodeDetectorState extends State<BarcodeDetector> {
       fit: StackFit.expand,
       children: [
         CustomPaint(
-          painter: Overlay(context: context, detectorRect: detectorRect),
+          painter: Overlay(
+            detectorRect: detectorRect,
+            options: widget.overlayOptions ?? OverlayOptions(color: Theme.of(context).colorScheme.primary),
+          ),
         ),
         if (widget.drawDebug)
           StreamBuilder(
@@ -80,7 +89,12 @@ class _BarcodeDetectorState extends State<BarcodeDetector> {
     }
 
     if (widget.onDetected != null && insideRectBarcodes.isNotEmpty) {
-      widget.onDetected!(insideRectBarcodes);
+      if (widget.filter != null) {
+        final filtered = insideRectBarcodes.where(widget.filter!);
+        if (filtered.isNotEmpty) widget.onDetected!(insideRectBarcodes);
+      } else {
+        widget.onDetected!(insideRectBarcodes);
+      }
     }
 
     if (!widget.drawDebug || detectorStreamController.isClosed) return;
@@ -100,30 +114,6 @@ class _BarcodeDetectorState extends State<BarcodeDetector> {
     }
     return true;
   }
-}
-
-class DetectorRect {
-  DetectorRect(ScannerDescription description, this.faction) {
-    rectSize = description.viewSize.width * faction;
-    leftBorder = (description.viewSize.width - rectSize) / 2;
-    rightBorder = (description.viewSize.width - rectSize) / 2 + rectSize;
-    topBorder = (description.viewSize.height - rectSize) / 2;
-    bottomBorder = (description.viewSize.height - rectSize) / 2 + rectSize;
-  }
-
-  final double faction;
-  late double rectSize;
-  late double leftBorder;
-  late double rightBorder;
-  late double topBorder;
-  late double bottomBorder;
-}
-
-class DetectorData {
-  DetectorData(this.insideRectBarcodes, this.outsideRectBarcodes);
-
-  List<Barcode> insideRectBarcodes;
-  List<Barcode> outsideRectBarcodes;
 }
 
 class BarcodeDetectorPainter extends CustomPainter {
@@ -182,20 +172,16 @@ class BarcodeDetectorPainter extends CustomPainter {
 }
 
 class Overlay extends CustomPainter {
-  Overlay({required this.context, required this.detectorRect});
+  Overlay({required this.detectorRect, required this.options});
 
-  final BuildContext context;
   final DetectorRect detectorRect;
+  final OverlayOptions options;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
     final center = Offset(size.width / 2, size.height / 2);
     final halfSize = detectorRect.rectSize / 2;
-    final borderHalfSize = halfSize + 2;
-    const borderThickness = 4.0;
-    const borderRoundingRadius = 36.0;
-    const borderGapsFaction = 0.5;
+    final borderHalfSize = halfSize + options.borderOffset;
 
     final bgPath = Path();
     bgPath.fillType = PathFillType.evenOdd;
@@ -203,7 +189,7 @@ class Overlay extends CustomPainter {
     bgPath.addRRect(
       RRect.fromRectAndRadius(
         Rect.fromCircle(center: center, radius: halfSize),
-        const Radius.circular(borderRoundingRadius),
+        Radius.circular(options.borderRoundingRadius),
       ),
     );
     canvas.drawPath(bgPath, Paint()..color = Colors.black54);
@@ -213,26 +199,26 @@ class Overlay extends CustomPainter {
     borderRectPath.addRRect(
       RRect.fromRectAndRadius(
         Rect.fromCircle(center: center, radius: borderHalfSize),
-        const Radius.circular(borderRoundingRadius),
+        Radius.circular(options.borderRoundingRadius),
       ),
     );
 
     final borderCutPath = Path();
     borderCutPath.addRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCircle(center: center, radius: borderHalfSize - borderThickness),
-        const Radius.circular(borderRoundingRadius - borderThickness),
+        Rect.fromCircle(center: center, radius: borderHalfSize - options.borderThickness),
+        Radius.circular(options.borderRoundingRadius - options.borderThickness),
       ),
     );
     borderCutPath.addRect(
-      Rect.fromCenter(center: center, width: borderHalfSize * 2 * borderGapsFaction, height: size.height),
+      Rect.fromCenter(center: center, width: borderHalfSize * 2 * options.borderGapsFaction, height: size.height),
     );
     borderCutPath.addRect(
-      Rect.fromCenter(center: center, width: size.width, height: borderHalfSize * 2 * borderGapsFaction),
+      Rect.fromCenter(center: center, width: size.width, height: borderHalfSize * 2 * options.borderGapsFaction),
     );
 
     final border = Path.combine(PathOperation.difference, borderRectPath, borderCutPath);
-    canvas.drawPath(border, Paint()..color = primaryColor);
+    canvas.drawPath(border, Paint()..color = options.color);
   }
 
   @override

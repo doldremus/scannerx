@@ -33,6 +33,7 @@ class LoggerMessage {
 }
 
 enum LogLevel {
+  none,
   critical,
   error,
   warning,

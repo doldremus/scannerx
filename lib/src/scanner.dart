@@ -21,7 +21,7 @@ class Scanner extends StatelessWidget {
   }
 
   Widget _build(BuildContext context, bool initialized) {
-    if (initialized) {
+    if (initialized && controller.description != null) {
       return Stack(
         children: [
           ClipRect(
@@ -37,6 +37,11 @@ class Scanner extends StatelessWidget {
           ),
           if (childBuilder != null) childBuilder!(controller.description!),
         ],
+      );
+    }
+    if (initialized && controller.description == null) {
+      return Container(
+        color: Colors.black,
       );
     }
     return Container(
@@ -62,9 +67,11 @@ abstract class ScannerController {
 
   ValueNotifier<bool> get initialized;
 
-  Future<void> init({ScannerOptions? options});
+  Future<ScannerDescription?> init({ScannerOptions? options});
 
   Future<void> dispose();
+
+  Future<bool> requestPermissions();
 
   Future<bool> hasFlashlight();
 
@@ -98,13 +105,17 @@ class _ScannerController implements ScannerController {
   Stream<List<Barcode>> get barcodes => _barcodeFlutterApi.barcodesStreamController.stream;
 
   @override
-  Future<void> init({ScannerOptions? options}) async {
+  Future<ScannerDescription?> init({ScannerOptions? options}) async {
+    description = null;
     initialized.value = false;
+
     final rawScannerDescription = await _scannerHostApi.init(options ?? ScannerOptions());
     if (rawScannerDescription != null) {
       description = ScannerDescription.fromRaw(rawScannerDescription);
     }
+
     initialized.value = true;
+    return description;
   }
 
   @override
@@ -113,6 +124,15 @@ class _ScannerController implements ScannerController {
     await _barcodeFlutterApi.dispose();
     await _scannerHostApi.dispose();
     BarcodeFlutterApi.setup(null);
+  }
+
+  @override
+  Future<bool> requestPermissions() async {
+    var res = await _scannerHostApi.requestPermissions();
+    if (res.granted) {
+      return true;
+    }
+    return false;
   }
 
   @override

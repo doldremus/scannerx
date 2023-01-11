@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart' show ReadBuffer, WriteBuffer;
 import 'package:flutter/services.dart';
 
 enum LogLevel {
+  none,
   critical,
   error,
   warning,

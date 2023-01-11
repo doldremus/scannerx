@@ -2,6 +2,7 @@ package dev.doldremus.scannerx
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.util.Size
 import android.view.Surface
 import androidx.camera.core.Camera
@@ -57,7 +58,8 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
         return permissionsListener?.onRequestPermissionsResult(requestCode, permissions, grantResults) ?: false
     }
 
-    override fun requestPermissions(callback: (Boolean) -> Unit) {
+    // TODO at the moment there is no check for a permanent denying
+    override fun requestPermissions(callback: (PermissionsResponse) -> Unit) {
         permissionsListener = PluginRegistry.RequestPermissionsResultListener { requestCode, _, grantResults ->
             if (requestCode != PERMISSIONS_REQUEST_CODE) {
                 false
@@ -65,18 +67,36 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
                 activityBinding?.removeRequestPermissionsResultListener(this)
                 permissionsListener = null
 
-                callback(hasAllPermissionsGranted(grantResults))
+                if (hasAllPermissionsGranted(grantResults)) {
+                    callback(PermissionsResponse(granted = true, permanentlyDenied = false))
+                } else {
+                    callback(PermissionsResponse(granted = false, permanentlyDenied = false))
+                }
+
                 true
             }
         }
-        activityBinding!!.addRequestPermissionsResultListener(this)
-        ActivityCompat.requestPermissions(activityBinding!!.activity, arrayOf(Manifest.permission.CAMERA), PERMISSIONS_REQUEST_CODE)
+
+        if (ActivityCompat.checkSelfPermission(activityBinding!!.activity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            callback(PermissionsResponse(granted = true, permanentlyDenied = false))
+        } else {
+            activityBinding!!.addRequestPermissionsResultListener(this)
+            ActivityCompat.requestPermissions(activityBinding!!.activity, arrayOf(Manifest.permission.CAMERA), PERMISSIONS_REQUEST_CODE)
+        }
     }
 
     override fun init(options: ScannerOptions, callback: (RawScannerDescription?) -> Unit) {
         requestPermissions {
             try {
-                if (it) initScanner(options, callback)
+                if (it.granted) {
+                    initScanner(options, callback)
+                } else {
+                    if (it.permanentlyDenied) {
+                        throw CameraAccessPermanentlyDenied()
+                    } else {
+                        throw CameraAccessDenied()
+                    }
+                }
             } catch (e: Throwable) {
                 logError(loggerApi, e)
                 callback(null)
@@ -139,7 +159,7 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
                 if (!barcodes.isNullOrEmpty()) {
                     val convertedData = barcodes.map { b -> b.toApiModel }
                     barcodesApi!!.barcodes(convertedData) {}
-                }else{
+                } else {
                     barcodesApi!!.barcodes(emptyList()) {}
                 }
             } catch (e: Throwable) {
@@ -202,14 +222,31 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
     }
 
     override fun hasFlashlight(): Boolean {
-        return camera!!.cameraInfo.hasFlashUnit()
+        return try {
+            camera!!.cameraInfo.hasFlashUnit()
+        } catch (e: Throwable) {
+            logError(loggerApi, e)
+            false
+        }
     }
 
     override fun getFlashlightState(): Boolean {
-        return camera!!.cameraInfo.torchState.value == TorchState.ON
+        return try {
+            return camera!!.cameraInfo.torchState.value == TorchState.ON
+        } catch (e: Throwable) {
+            logError(loggerApi, e)
+            false
+        }
     }
 
     override fun setFlashlightState(state: Boolean) {
-        camera!!.cameraControl.enableTorch(state)
+        try {
+            camera!!.cameraControl.enableTorch(state)
+        } catch (e: Throwable) {
+            logError(loggerApi, e)
+        }
     }
 }
+
+class CameraAccessDenied : Exception()
+class CameraAccessPermanentlyDenied : Exception()

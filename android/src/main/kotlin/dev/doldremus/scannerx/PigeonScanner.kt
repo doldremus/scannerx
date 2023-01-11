@@ -143,28 +143,51 @@ data class Resolution (
   }
 }
 
+/** Generated class from Pigeon that represents data sent in messages. */
+data class PermissionsResponse (
+  val granted: Boolean,
+  val permanentlyDenied: Boolean
+
+) {
+  companion object {
+    @Suppress("UNCHECKED_CAST")
+    fun fromList(list: List<Any?>): PermissionsResponse {
+      val granted = list[0] as Boolean
+      val permanentlyDenied = list[1] as Boolean
+
+      return PermissionsResponse(granted, permanentlyDenied)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf<Any?>(
+      granted,
+      permanentlyDenied,
+    )
+  }
+}
+
 @Suppress("UNCHECKED_CAST")
 private object ScannerHostApiCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
       128.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          RawAnalysisDescription.fromList(it)
+          PermissionsResponse.fromList(it)
         }
       }
       129.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          RawScannerDescription.fromList(it)
+          RawAnalysisDescription.fromList(it)
         }
       }
       130.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          RawTextureDescription.fromList(it)
+          RawScannerDescription.fromList(it)
         }
       }
       131.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          Resolution.fromList(it)
+          RawTextureDescription.fromList(it)
         }
       }
       132.toByte() -> {
@@ -174,6 +197,11 @@ private object ScannerHostApiCodec : StandardMessageCodec() {
       }
       133.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
+          Resolution.fromList(it)
+        }
+      }
+      134.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
           ScannerOptions.fromList(it)
         }
       }
@@ -182,19 +210,19 @@ private object ScannerHostApiCodec : StandardMessageCodec() {
   }
   override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
     when (value) {
-      is RawAnalysisDescription -> {
+      is PermissionsResponse -> {
         stream.write(128)
         writeValue(stream, value.toList())
       }
-      is RawScannerDescription -> {
+      is RawAnalysisDescription -> {
         stream.write(129)
         writeValue(stream, value.toList())
       }
-      is RawTextureDescription -> {
+      is RawScannerDescription -> {
         stream.write(130)
         writeValue(stream, value.toList())
       }
-      is Resolution -> {
+      is RawTextureDescription -> {
         stream.write(131)
         writeValue(stream, value.toList())
       }
@@ -202,8 +230,12 @@ private object ScannerHostApiCodec : StandardMessageCodec() {
         stream.write(132)
         writeValue(stream, value.toList())
       }
-      is ScannerOptions -> {
+      is Resolution -> {
         stream.write(133)
+        writeValue(stream, value.toList())
+      }
+      is ScannerOptions -> {
+        stream.write(134)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -213,7 +245,7 @@ private object ScannerHostApiCodec : StandardMessageCodec() {
 
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface ScannerHostApi {
-  fun requestPermissions(callback: (Boolean) -> Unit)
+  fun requestPermissions(callback: (PermissionsResponse) -> Unit)
   fun init(options: ScannerOptions, callback: (RawScannerDescription?) -> Unit)
   fun dispose(callback: () -> Unit)
   fun hasFlashlight(): Boolean

@@ -148,27 +148,56 @@ class Resolution {
   }
 }
 
+class PermissionsResponse {
+  PermissionsResponse({
+    required this.granted,
+    required this.permanentlyDenied,
+  });
+
+  bool granted;
+
+  bool permanentlyDenied;
+
+  Object encode() {
+    return <Object?>[
+      granted,
+      permanentlyDenied,
+    ];
+  }
+
+  static PermissionsResponse decode(Object result) {
+    result as List<Object?>;
+    return PermissionsResponse(
+      granted: result[0]! as bool,
+      permanentlyDenied: result[1]! as bool,
+    );
+  }
+}
+
 class _ScannerHostApiCodec extends StandardMessageCodec {
   const _ScannerHostApiCodec();
   @override
   void writeValue(WriteBuffer buffer, Object? value) {
-    if (value is RawAnalysisDescription) {
+    if (value is PermissionsResponse) {
       buffer.putUint8(128);
       writeValue(buffer, value.encode());
-    } else if (value is RawScannerDescription) {
+    } else if (value is RawAnalysisDescription) {
       buffer.putUint8(129);
       writeValue(buffer, value.encode());
-    } else if (value is RawTextureDescription) {
+    } else if (value is RawScannerDescription) {
       buffer.putUint8(130);
       writeValue(buffer, value.encode());
-    } else if (value is Resolution) {
+    } else if (value is RawTextureDescription) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
     } else if (value is Resolution) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
-    } else if (value is ScannerOptions) {
+    } else if (value is Resolution) {
       buffer.putUint8(133);
+      writeValue(buffer, value.encode());
+    } else if (value is ScannerOptions) {
+      buffer.putUint8(134);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -179,21 +208,24 @@ class _ScannerHostApiCodec extends StandardMessageCodec {
   Object? readValueOfType(int type, ReadBuffer buffer) {
     switch (type) {
       case 128:       
-        return RawAnalysisDescription.decode(readValue(buffer)!);
+        return PermissionsResponse.decode(readValue(buffer)!);
       
       case 129:       
-        return RawScannerDescription.decode(readValue(buffer)!);
+        return RawAnalysisDescription.decode(readValue(buffer)!);
       
       case 130:       
-        return RawTextureDescription.decode(readValue(buffer)!);
+        return RawScannerDescription.decode(readValue(buffer)!);
       
       case 131:       
-        return Resolution.decode(readValue(buffer)!);
+        return RawTextureDescription.decode(readValue(buffer)!);
       
       case 132:       
         return Resolution.decode(readValue(buffer)!);
       
       case 133:       
+        return Resolution.decode(readValue(buffer)!);
+      
+      case 134:       
         return ScannerOptions.decode(readValue(buffer)!);
       
       default:
@@ -214,7 +246,7 @@ class ScannerHostApi {
 
   static const MessageCodec<Object?> codec = _ScannerHostApiCodec();
 
-  Future<bool> requestPermissions() async {
+  Future<PermissionsResponse> requestPermissions() async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.ScannerHostApi.requestPermissions', codec,
         binaryMessenger: _binaryMessenger);
@@ -237,7 +269,7 @@ class ScannerHostApi {
         message: 'Host platform returned null value for non-null return value.',
       );
     } else {
-      return (replyList[0] as bool?)!;
+      return (replyList[0] as PermissionsResponse?)!;
     }
   }
 

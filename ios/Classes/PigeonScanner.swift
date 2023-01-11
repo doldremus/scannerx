@@ -133,20 +133,44 @@ struct Resolution {
   }
 }
 
+/// Generated class from Pigeon that represents data sent in messages.
+struct PermissionsResponse {
+  var granted: Bool
+  var permanentlyDenied: Bool
+
+  static func fromList(_ list: [Any?]) -> PermissionsResponse? {
+    let granted = list[0] as! Bool
+    let permanentlyDenied = list[1] as! Bool
+
+    return PermissionsResponse(
+      granted: granted,
+      permanentlyDenied: permanentlyDenied
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      granted,
+      permanentlyDenied,
+    ]
+  }
+}
+
 private class ScannerHostApiCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
       case 128:
-        return RawAnalysisDescription.fromList(self.readValue() as! [Any])      
+        return PermissionsResponse.fromList(self.readValue() as! [Any])      
       case 129:
-        return RawScannerDescription.fromList(self.readValue() as! [Any])      
+        return RawAnalysisDescription.fromList(self.readValue() as! [Any])      
       case 130:
-        return RawTextureDescription.fromList(self.readValue() as! [Any])      
+        return RawScannerDescription.fromList(self.readValue() as! [Any])      
       case 131:
-        return Resolution.fromList(self.readValue() as! [Any])      
+        return RawTextureDescription.fromList(self.readValue() as! [Any])      
       case 132:
         return Resolution.fromList(self.readValue() as! [Any])      
       case 133:
+        return Resolution.fromList(self.readValue() as! [Any])      
+      case 134:
         return ScannerOptions.fromList(self.readValue() as! [Any])      
       default:
         return super.readValue(ofType: type)
@@ -156,23 +180,26 @@ private class ScannerHostApiCodecReader: FlutterStandardReader {
 }
 private class ScannerHostApiCodecWriter: FlutterStandardWriter {
   override func writeValue(_ value: Any) {
-    if let value = value as? RawAnalysisDescription {
+    if let value = value as? PermissionsResponse {
       super.writeByte(128)
       super.writeValue(value.toList())
-    } else if let value = value as? RawScannerDescription {
+    } else if let value = value as? RawAnalysisDescription {
       super.writeByte(129)
       super.writeValue(value.toList())
-    } else if let value = value as? RawTextureDescription {
+    } else if let value = value as? RawScannerDescription {
       super.writeByte(130)
       super.writeValue(value.toList())
-    } else if let value = value as? Resolution {
+    } else if let value = value as? RawTextureDescription {
       super.writeByte(131)
       super.writeValue(value.toList())
     } else if let value = value as? Resolution {
       super.writeByte(132)
       super.writeValue(value.toList())
-    } else if let value = value as? ScannerOptions {
+    } else if let value = value as? Resolution {
       super.writeByte(133)
+      super.writeValue(value.toList())
+    } else if let value = value as? ScannerOptions {
+      super.writeByte(134)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -196,7 +223,7 @@ class ScannerHostApiCodec: FlutterStandardMessageCodec {
 
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol ScannerHostApi {
-  func requestPermissions(completion: @escaping (Bool) -> Void)
+  func requestPermissions(completion: @escaping (PermissionsResponse) -> Void)
   func init(options: ScannerOptions, completion: @escaping (RawScannerDescription?) -> Void)
   func dispose(completion: @escaping () -> Void)
   func hasFlashlight() -> Bool

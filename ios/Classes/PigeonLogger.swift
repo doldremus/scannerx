@@ -17,11 +17,12 @@ import FlutterMacOS
 /// Generated class from Pigeon.
 
 enum LogLevel: Int {
-  case critical = 0
-  case error = 1
-  case warning = 2
-  case informational = 3
-  case verbose = 4
+  case none = 0
+  case critical = 1
+  case error = 2
+  case warning = 3
+  case informational = 4
+  case verbose = 5
 }
 
 /// Generated class from Pigeon that represents data sent in messages.

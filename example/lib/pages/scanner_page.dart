@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:scannerx/scannerx.dart';
-import 'package:scannerx_example/pages/detector.dart';
 
 class ScannerPage extends StatefulWidget {
   const ScannerPage({super.key});
@@ -12,7 +11,7 @@ class ScannerPage extends StatefulWidget {
 }
 
 class ScannerPageState extends State<ScannerPage> with SingleTickerProviderStateMixin {
-  late ScannerController scannerController = ScannerController();
+  late ScannerController scannerController = ScannerController(onPlatformError: onPlatformError);
   bool redirecting = false;
   bool flashLightState = false;
 
@@ -26,15 +25,28 @@ class ScannerPageState extends State<ScannerPage> with SingleTickerProviderState
   }
 
   init() async {
-    await scannerController.init();
-    // await scannerController.init(options: ScannerOptions(targetResolution: Resolution(width: 720, height: 1280)));
-    flashLightState = await scannerController.getFlashlightState();
+    final description = await scannerController.init();
+    if(description != null){
+      // await scannerController.init(options: ScannerOptions(targetResolution: Resolution(width: 720, height: 1280)));
+      flashLightState = await scannerController.getFlashlightState();
+    }
   }
 
   @override
   void dispose() async {
     super.dispose();
     scannerController.dispose();
+  }
+
+  onPlatformError(LoggerError error) {
+    switch (error.className) {
+      case 'CameraAccessDenied':
+      case 'CameraAccessPermanentlyDenied':
+        Navigator.of(context).pop();
+        break;
+      default:
+        // TODO implement unexpected error handling
+    }
   }
 
   void showInfo(RawBarcode barcode) {
@@ -51,6 +63,7 @@ class ScannerPageState extends State<ScannerPage> with SingleTickerProviderState
         children: [
           Scanner(
             controller: scannerController,
+            loader: const Center(child: CircularProgressIndicator()),
             childBuilder: (description) {
               return BarcodeDetector(
                 description: description,
@@ -81,7 +94,7 @@ class ScannerPageState extends State<ScannerPage> with SingleTickerProviderState
                   child: IconButton(
                     icon: Builder(
                       builder: (context) {
-                        if(flashLightState){
+                        if (flashLightState) {
                           return const Icon(Icons.flashlight_on_rounded, color: Colors.white);
                         }
                         return const Icon(Icons.flashlight_off_rounded, color: Colors.white);
@@ -106,8 +119,8 @@ class ScannerPageState extends State<ScannerPage> with SingleTickerProviderState
     );
   }
 
-  onDetected(BuildContext context, List<Barcode> barcodes){
-    if(barcodes[0].rawValue != null && lastBarcode != barcodes[0].rawValue){
+  onDetected(BuildContext context, List<Barcode> barcodes) {
+    if (barcodes[0].rawValue != null && lastBarcode != barcodes[0].rawValue) {
       lastBarcode = barcodes[0].rawValue!;
       const duration = Duration(seconds: 4);
 
@@ -119,7 +132,7 @@ class ScannerPageState extends State<ScannerPage> with SingleTickerProviderState
         content: Text('${barcodes[0].format}\n${barcodes[0].type}\n\n$lastBarcode', textAlign: TextAlign.center),
       ));
 
-      if(timerToClearLastBarcode != null){
+      if (timerToClearLastBarcode != null) {
         timerToClearLastBarcode!.cancel();
       }
       timerToClearLastBarcode = Timer(duration, () {

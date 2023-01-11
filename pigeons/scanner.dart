@@ -13,7 +13,7 @@ import 'package:pigeon/pigeon.dart';
 @HostApi()
 abstract class ScannerHostApi {
   @async
-  bool requestPermissions();
+  PermissionsResponse requestPermissions();
 
   @async
   RawScannerDescription? init(ScannerOptions options);
@@ -65,3 +65,9 @@ enum CameraLensDirection {
   back,
 }
 
+class PermissionsResponse {
+  PermissionsResponse(this.granted, this.permanentlyDenied);
+
+  bool granted;
+  bool permanentlyDenied;
+}
