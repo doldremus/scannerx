@@ -109,7 +109,7 @@ class _ScannerController implements ScannerController {
     description = null;
     initialized.value = false;
 
-    final rawScannerDescription = await _scannerHostApi.init(options ?? ScannerOptions());
+    final rawScannerDescription = await _scannerHostApi.initialize(options ?? ScannerOptions());
     if (rawScannerDescription != null) {
       description = ScannerDescription.fromRaw(rawScannerDescription);
     }

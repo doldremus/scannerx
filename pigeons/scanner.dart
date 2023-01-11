@@ -16,7 +16,7 @@ abstract class ScannerHostApi {
   PermissionsResponse requestPermissions();
 
   @async
-  RawScannerDescription? init(ScannerOptions options);
+  RawScannerDescription? initialize(ScannerOptions options);
 
   @async
   void dispose();

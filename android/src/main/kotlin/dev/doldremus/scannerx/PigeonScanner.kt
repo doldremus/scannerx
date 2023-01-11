@@ -246,7 +246,7 @@ private object ScannerHostApiCodec : StandardMessageCodec() {
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface ScannerHostApi {
   fun requestPermissions(callback: (PermissionsResponse) -> Unit)
-  fun init(options: ScannerOptions, callback: (RawScannerDescription?) -> Unit)
+  fun initialize(options: ScannerOptions, callback: (RawScannerDescription?) -> Unit)
   fun dispose(callback: () -> Unit)
   fun hasFlashlight(): Boolean
   fun getFlashlightState(): Boolean
@@ -279,14 +279,14 @@ interface ScannerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.ScannerHostApi.init", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.ScannerHostApi.initialize", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             var wrapped = listOf<Any?>()
             try {
               val args = message as List<Any?>
               val optionsArg = args[0] as ScannerOptions
-              api.init(optionsArg) {
+              api.initialize(optionsArg) {
                 reply.reply(wrapResult(it))
               }
             } catch (exception: Error) {

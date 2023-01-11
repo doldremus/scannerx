@@ -85,7 +85,7 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
         }
     }
 
-    override fun init(options: ScannerOptions, callback: (RawScannerDescription?) -> Unit) {
+    override fun initialize(options: ScannerOptions, callback: (RawScannerDescription?) -> Unit) {
         requestPermissions {
             try {
                 if (it.granted) {
