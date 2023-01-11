@@ -78,18 +78,22 @@ class _BarcodeDetectorState extends State<BarcodeDetector> {
 
   onBarcodes(List<Barcode> barcodes) {
     final List<Barcode> outsideRectBarcodes = [];
-    List<Barcode> insideRectBarcodes = [];
+    final List<Barcode> insideRectBarcodes = [];
 
     for (final barcode in barcodes) {
       if (isInRect(barcode)) {
-        insideRectBarcodes.add(barcode);
-        break;
+        if(widget.filter != null){
+          if(widget.filter!(barcode)){
+            insideRectBarcodes.add(barcode);
+          }else{
+            outsideRectBarcodes.add(barcode);
+          }
+        }else{
+          insideRectBarcodes.add(barcode);
+        }
+      }else{
+        outsideRectBarcodes.add(barcode);
       }
-      outsideRectBarcodes.add(barcode);
-    }
-
-    if (widget.filter != null) {
-      insideRectBarcodes = insideRectBarcodes.where(widget.filter!).toList();
     }
 
     if (widget.onDetected != null && insideRectBarcodes.isNotEmpty) {
