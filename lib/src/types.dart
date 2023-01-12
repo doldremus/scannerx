@@ -77,7 +77,7 @@ class Barcode extends RawBarcode {
 
   final List<Offset>? displaySpaceCorners;
 
-  Barcode copyWith(
+  Barcode copyWith({
     List<BarcodeOffset?>? corners,
     List<Offset>? displaySpaceCorners,
     BarcodeBoundingBox? boundingBox,
@@ -85,7 +85,7 @@ class Barcode extends RawBarcode {
     String? rawValue,
     BarcodeFormat? format,
     BarcodeType? type,
-  ) {
+  }) {
     return Barcode(
       corners: corners ?? this.corners,
       displaySpaceCorners: displaySpaceCorners ?? this.displaySpaceCorners,
