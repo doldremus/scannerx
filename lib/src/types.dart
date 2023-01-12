@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:scannerx/scannerx.dart';
 import 'package:scannerx/src/utils.dart';
 
@@ -26,7 +27,7 @@ class ScannerDescription {
       analysis: AnalysisDescription(
         resolution: rawDescription.analysis.resolution,
         aspectRatio: analysisAspectRatio,
-        fitScale: Utils.getFitScale(analysisAspectRatio, viewSize)
+        fitScale: Utils.getFitScale(analysisAspectRatio, viewSize),
       ),
       viewSize: viewSize,
     );
@@ -75,6 +76,26 @@ class Barcode extends RawBarcode {
   }
 
   final List<Offset>? displaySpaceCorners;
+
+  Barcode copyWith(
+    List<BarcodeOffset?>? corners,
+    List<Offset>? displaySpaceCorners,
+    BarcodeBoundingBox? boundingBox,
+    Uint8List? rawBytes,
+    String? rawValue,
+    BarcodeFormat? format,
+    BarcodeType? type,
+  ) {
+    return Barcode(
+      corners: corners ?? this.corners,
+      displaySpaceCorners: displaySpaceCorners ?? this.displaySpaceCorners,
+      boundingBox: boundingBox ?? this.boundingBox,
+      rawBytes: rawBytes ?? this.rawBytes,
+      rawValue: rawValue ?? this.rawValue,
+      format: format ?? this.format,
+      type: type ?? this.type,
+    );
+  }
 }
 
 class ScannerError implements Error {
