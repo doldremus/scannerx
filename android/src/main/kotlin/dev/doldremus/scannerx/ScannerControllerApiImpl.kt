@@ -45,9 +45,14 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
         activityBinding = activityPluginBinding
         barcodesApi = BarcodeFlutterApi(flutterBinding!!.binaryMessenger)
         loggerApi = LoggerFlutterApi(flutterBinding!!.binaryMessenger)
+
+        activityPluginBinding.addRequestPermissionsResultListener(this)
     }
 
     fun onActivityDispose() {
+        activityBinding?.removeRequestPermissionsResultListener(this)
+        permissionsListener = null
+
         flutterBinding = null
         activityBinding = null
         barcodesApi = null
@@ -64,9 +69,6 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
             if (requestCode != PERMISSIONS_REQUEST_CODE) {
                 false
             } else {
-                activityBinding?.removeRequestPermissionsResultListener(this)
-                permissionsListener = null
-
                 if (hasAllPermissionsGranted(grantResults)) {
                     callback(PermissionsResponse(granted = true, permanentlyDenied = false))
                 } else {
@@ -80,7 +82,6 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
         if (ActivityCompat.checkSelfPermission(activityBinding!!.activity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             callback(PermissionsResponse(granted = true, permanentlyDenied = false))
         } else {
-            activityBinding!!.addRequestPermissionsResultListener(this)
             ActivityCompat.requestPermissions(activityBinding!!.activity, arrayOf(Manifest.permission.CAMERA), PERMISSIONS_REQUEST_CODE)
         }
     }
