@@ -5,17 +5,19 @@
 Pod::Spec.new do |s|
   s.name             = 'scannerx'
   s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin project.'
+  s.summary          = 'Flutter scanner plugin'
   s.description      = <<-DESC
-A new Flutter plugin project.
+Flutter scanner plugin that uses CameraX on Android and native API on iOS. The scanner preview widget can be customized
                        DESC
   s.homepage         = 'http://example.com'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'doldremus' => 'doldremus@gmail.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
-  s.platform = :ios, '9.0'
+  s.dependency 'GoogleMLKit/BarcodeScanning'
+  s.static_framework = true
+  s.platform = :ios, '10.0'
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
