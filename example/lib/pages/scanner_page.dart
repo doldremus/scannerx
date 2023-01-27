@@ -38,7 +38,7 @@ class ScannerPageState extends State<ScannerPage> with SingleTickerProviderState
     scannerController.dispose();
   }
 
-  onPlatformError(LoggerError error) {
+  onPlatformError(ScannerError error) {
     switch (error.className) {
       case 'CameraAccessDenied':
       case 'CameraAccessPermanentlyDenied':
@@ -69,6 +69,7 @@ class ScannerPageState extends State<ScannerPage> with SingleTickerProviderState
                 description: description,
                 barcodesStream: scannerController.barcodes,
                 drawDebug: true,
+                // filter: (barcode) => barcode.format == BarcodeFormat.dataMatrix,
                 onDetected: (barcodes) => onDetected(context, barcodes),
               );
             },

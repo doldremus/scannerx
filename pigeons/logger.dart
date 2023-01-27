@@ -16,12 +16,12 @@ abstract class LoggerFlutterApi {
 }
 
 class LoggerError {
-  LoggerError({this.className, this.cause, this.stackTrace, this.description, this.isCritical = true});
+  LoggerError({this.className, this.cause, this.stackTrace, this.message, this.isCritical = true});
 
   final String? className;
   final String? cause;
+  final String? message;
   final String? stackTrace;
-  final String? description;
   final bool isCritical;
 }
 
