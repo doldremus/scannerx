@@ -40,11 +40,11 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
             return
         }
         guard imageBuffer != nil else {
-            logError(loggerApi, ScannerHostApiError.imageBufferIsNull)
+            logError(loggerApi, ScannerHostApiError.ImageBufferIsNull)
             return
         }
         guard textureId != nil else {
-            logError(loggerApi, ScannerHostApiError.textureIdIsNull)
+            logError(loggerApi, ScannerHostApiError.TextureIdIsNull)
             return
         }
         
@@ -93,9 +93,9 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         requestPermissions() { [self] result in
             guard result.granted else {
                 if(result.permanentlyDenied) {
-                    logError(loggerApi, ScannerHostApiError.cameraAccessPermanentlyDenied)
+                    logError(loggerApi, ScannerHostApiError.CameraAccessPermanentlyDenied)
                 } else {
-                    logError(loggerApi, ScannerHostApiError.cameraAccessDenied)
+                    logError(loggerApi, ScannerHostApiError.CameraAccessDenied)
                 }
                 completion(nil)
                 return
@@ -115,7 +115,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         ).devices.first
         
         guard captureDevice != nil else {
-            logError(loggerApi, ScannerHostApiError.suitableDeviceNotFound)
+            logError(loggerApi, ScannerHostApiError.SuitableDeviceNotFound)
             return
         }
         
@@ -151,11 +151,11 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     
     func createScannerDescription() -> RawScannerDescription? {
         guard captureDevice != nil else {
-            logError(loggerApi, ScannerHostApiError.captureDeviceIsNull)
+            logError(loggerApi, ScannerHostApiError.CaptureDeviceIsNull)
             return nil
         }
         guard textureId != nil else {
-            logError(loggerApi, ScannerHostApiError.textureIdIsNull)
+            logError(loggerApi, ScannerHostApiError.TextureIdIsNull)
             return nil
         }
         
@@ -199,7 +199,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
 
     func hasFlashlight() -> Bool {
         guard captureDevice != nil else {
-            logError(loggerApi, ScannerHostApiError.captureDeviceIsNull)
+            logError(loggerApi, ScannerHostApiError.CaptureDeviceIsNull)
             return false
         }
         return captureDevice!.hasTorch && captureDevice!.isTorchModeSupported(.on)
@@ -207,7 +207,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     
     func getFlashlightState() -> Bool {
         guard captureDevice != nil else {
-            logError(loggerApi, ScannerHostApiError.captureDeviceIsNull)
+            logError(loggerApi, ScannerHostApiError.CaptureDeviceIsNull)
             return false
         }
         return captureDevice!.torchMode == .on ? true : false
@@ -215,11 +215,11 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     
     func setFlashlightState(state: Bool) {
         guard captureDevice != nil else {
-            logError(loggerApi, ScannerHostApiError.captureDeviceIsNull)
+            logError(loggerApi, ScannerHostApiError.CaptureDeviceIsNull)
             return
         }
         guard captureDevice!.isTorchModeSupported(.on) else {
-            logError(loggerApi, ScannerHostApiError.torchModeUnsupported)
+            logError(loggerApi, ScannerHostApiError.TorchModeUnsupported)
             return
         }
         do {
@@ -233,11 +233,11 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
 }
 
 enum ScannerHostApiError: Error {
-    case captureDeviceIsNull
-    case suitableDeviceNotFound
-    case imageBufferIsNull
-    case textureIdIsNull
-    case torchModeUnsupported
-    case cameraAccessPermanentlyDenied
-    case cameraAccessDenied
+    case CaptureDeviceIsNull
+    case SuitableDeviceNotFound
+    case ImageBufferIsNull
+    case TextureIdIsNull
+    case TorchModeUnsupported
+    case CameraAccessPermanentlyDenied
+    case CameraAccessDenied
 }
