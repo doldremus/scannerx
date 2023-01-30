@@ -9,10 +9,10 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     
     let textureRegistry: FlutterTextureRegistry
     
-    var imageBuffer: CVImageBuffer!
-    var textureId: Int64!
-    var captureSession: AVCaptureSession!
-    var captureDevice: AVCaptureDevice!
+    var imageBuffer: CVImageBuffer?
+    var textureId: Int64?
+    var captureSession: AVCaptureSession?
+    var captureDevice: AVCaptureDevice?
     var isCaptureOutputBusy: Bool
     
     init(_ registrar: FlutterPluginRegistrar) {
@@ -30,20 +30,28 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         if imageBuffer == nil {
             return nil
         }
-        return Unmanaged<CVPixelBuffer>.passRetained(imageBuffer)
+        return Unmanaged<CVPixelBuffer>.passRetained(imageBuffer!)
     }
 
     public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
-        textureRegistry.textureFrameAvailable(textureId)
-
-        if isCaptureOutputBusy {
+        
+        guard !isCaptureOutputBusy else {
             return
         }
-
+        guard imageBuffer != nil else {
+            logError(loggerApi, ScannerHostApiError.imageBufferIsNull)
+            return
+        }
+        guard textureId != nil else {
+            logError(loggerApi, ScannerHostApiError.textureIdIsNull)
+            return
+        }
+        
+        textureRegistry.textureFrameAvailable(textureId!)
+        
         isCaptureOutputBusy = true
-
-        let visionImage = VisionImage(image: imageBuffer.image)
+        let visionImage = VisionImage(image: imageBuffer!.image)
 //        visionImage.orientation = UIDevice.current.orientation.imageOrientation(position: captureDevice.position)
 
         let format = MLKitBarcodeScanning.BarcodeFormat.all
@@ -69,28 +77,30 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     }
 
     func requestPermissions(completion: @escaping (PermissionsResponse) -> Void) {
-        if AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
-            completion(PermissionsResponse.init(granted: true, permanentlyDenied: false))
-            return
-        }
-        AVCaptureDevice.requestAccess(for: .video) {
-            completion(PermissionsResponse.init(granted: $0, permanentlyDenied: false))
+        let mediaType = AVMediaType.video
+        let status = AVCaptureDevice.authorizationStatus(for: mediaType)
+        switch status {
+            case .denied, .restricted: completion(PermissionsResponse(granted: false, permanentlyDenied: true))
+            case .authorized: completion(PermissionsResponse(granted: true, permanentlyDenied: false))
+            default:
+                AVCaptureDevice.requestAccess(for: mediaType) { granted in
+                    completion(PermissionsResponse(granted: granted, permanentlyDenied: false))
+                }
         }
     }
-    
+        
     func initialize(options: ScannerOptions, completion: @escaping (RawScannerDescription?) -> Void) {
-        requestPermissions() { [self] in
-            guard $0.granted else {
-                if($0.permanentlyDenied){
-                    logError(loggerApi, ScannerHostApiError.cameraAccessDenied)
-                }else{
+        requestPermissions() { [self] result in
+            guard result.granted else {
+                if(result.permanentlyDenied) {
+                    logError(loggerApi, ScannerHostApiError.cameraAccessPermanentlyDenied)
+                } else {
                     logError(loggerApi, ScannerHostApiError.cameraAccessDenied)
                 }
                 completion(nil)
                 return
             }
-            
-            initScanner(options: options, completion: completion)
+            self.initScanner(options: options, completion: completion)
         }
     }
     
@@ -104,13 +114,18 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
             position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
         ).devices.first
         
-        captureSession.beginConfiguration()
+        guard captureDevice != nil else {
+            logError(loggerApi, ScannerHostApiError.suitableDeviceNotFound)
+            return
+        }
+        
+        captureSession!.beginConfiguration()
 //        captureSession.sessionPreset = AVCaptureSession.Preset.hd1280x720
         
         //add device input
         do {
-            let input = try AVCaptureDeviceInput(device: captureDevice)
-            captureSession.addInput(input)
+            let input = try AVCaptureDeviceInput(device: captureDevice!)
+            captureSession!.addInput(input)
         } catch let error {
             logError(loggerApi, error)
         }
@@ -121,31 +136,35 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         videoOutput.alwaysDiscardsLateVideoFrames = true
         videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue.main)
         
-        captureSession.addOutput(videoOutput)
+        captureSession!.addOutput(videoOutput)
         for connection in videoOutput.connections {
             connection.videoOrientation = .portrait
             if options.lensDirection == .front && connection.isVideoMirroringSupported {
                 connection.isVideoMirrored = true
             }
         }
-        captureSession.commitConfiguration()
-        captureSession.startRunning()
+        captureSession!.commitConfiguration()
+        captureSession!.startRunning()
 
         completion(createScannerDescription())
     }
     
     func createScannerDescription() -> RawScannerDescription? {
         guard captureDevice != nil else {
-            logError(loggerApi, ScannerHostApiError.captureDeviceNotInitialized)
+            logError(loggerApi, ScannerHostApiError.captureDeviceIsNull)
+            return nil
+        }
+        guard textureId != nil else {
+            logError(loggerApi, ScannerHostApiError.textureIdIsNull)
             return nil
         }
         
-        let dimensions = CMVideoFormatDescriptionGetDimensions(captureDevice.activeFormat.formatDescription)
+        let dimensions = CMVideoFormatDescriptionGetDimensions(captureDevice!.activeFormat.formatDescription)
         
         let width = Double(dimensions.width)
         let height = Double(dimensions.height)
         let resolution = Resolution(width: height, height: width)
-        let textureDescription = RawTextureDescription(id: Int32(truncatingIfNeeded: textureId), resolution: resolution)
+        let textureDescription = RawTextureDescription(id: Int32(truncatingIfNeeded: textureId!), resolution: resolution)
         let analysisDescription = RawAnalysisDescription(resolution: resolution)
         
         return RawScannerDescription(
@@ -157,16 +176,18 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     
     func dispose(completion: @escaping () -> Void) {
         if captureSession != nil {
-            captureSession.stopRunning()
-            for input in captureSession.inputs {
-                captureSession.removeInput(input)
+            captureSession!.stopRunning()
+            for input in captureSession!.inputs {
+                captureSession!.removeInput(input)
             }
-            for output in captureSession.outputs {
-                captureSession.removeOutput(output)
+            for output in captureSession!.outputs {
+                captureSession!.removeOutput(output)
             }
         }
 
-        textureRegistry.unregisterTexture(textureId)
+        if textureId != nil {
+            textureRegistry.unregisterTexture(textureId!)
+        }
         
         imageBuffer = nil
         captureSession = nil
@@ -178,15 +199,15 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
 
     func hasFlashlight() -> Bool {
         guard captureDevice != nil else {
-            logError(loggerApi, ScannerHostApiError.captureDeviceNotInitialized)
+            logError(loggerApi, ScannerHostApiError.captureDeviceIsNull)
             return false
         }
-        return captureDevice!.hasTorch && captureDevice.isTorchModeSupported(.on)
+        return captureDevice!.hasTorch && captureDevice!.isTorchModeSupported(.on)
     }
     
     func getFlashlightState() -> Bool {
         guard captureDevice != nil else {
-            logError(loggerApi, ScannerHostApiError.captureDeviceNotInitialized)
+            logError(loggerApi, ScannerHostApiError.captureDeviceIsNull)
             return false
         }
         return captureDevice!.torchMode == .on ? true : false
@@ -194,10 +215,10 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     
     func setFlashlightState(state: Bool) {
         guard captureDevice != nil else {
-            logError(loggerApi, ScannerHostApiError.captureDeviceNotInitialized)
+            logError(loggerApi, ScannerHostApiError.captureDeviceIsNull)
             return
         }
-        guard captureDevice.isTorchModeSupported(.on) else {
+        guard captureDevice!.isTorchModeSupported(.on) else {
             logError(loggerApi, ScannerHostApiError.torchModeUnsupported)
             return
         }
@@ -212,7 +233,10 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
 }
 
 enum ScannerHostApiError: Error {
-    case captureDeviceNotInitialized
+    case captureDeviceIsNull
+    case suitableDeviceNotFound
+    case imageBufferIsNull
+    case textureIdIsNull
     case torchModeUnsupported
     case cameraAccessPermanentlyDenied
     case cameraAccessDenied

@@ -80,7 +80,7 @@ extension MLKitBarcodeScanning.BarcodeFormat {
 
 func logError(_ api: LoggerFlutterApi?, _ error: Error?){
     let error = LoggerError(
-        className: error?.localizedDescription,
+        className: error != nil ? "\(error!)" : "",
         stackTrace: Thread.callStackSymbols.joined(separator: "\n"),
         isCritical: true
     )
