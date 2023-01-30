@@ -58,7 +58,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
             }
             
             if barcodes != nil {
-                let convertedData = barcodes!.map{ $0.toApiModel }
+                let convertedData = barcodes!.map { $0.toApiModel }
                 barcodesApi.barcodes(barcodes: convertedData){}
             } else {
                 barcodesApi.barcodes(barcodes: []) {}
@@ -67,20 +67,34 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
             isCaptureOutputBusy = false
         }
     }
-    
-    /**
-     * ScannerHostApi impl
-     */
+
     func requestPermissions(completion: @escaping (PermissionsResponse) -> Void) {
+        if AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
+            completion(PermissionsResponse.init(granted: true, permanentlyDenied: false))
+            return
+        }
         AVCaptureDevice.requestAccess(for: .video) {
-            completion(PermissionsResponse.init(
-                granted: $0,
-                permanentlyDenied: false
-            ))
+            completion(PermissionsResponse.init(granted: $0, permanentlyDenied: false))
         }
     }
     
     func initialize(options: ScannerOptions, completion: @escaping (RawScannerDescription?) -> Void) {
+        requestPermissions() { [self] in
+            guard $0.granted else {
+                if($0.permanentlyDenied){
+                    logError(loggerApi, ScannerHostApiError.cameraAccessDenied)
+                }else{
+                    logError(loggerApi, ScannerHostApiError.cameraAccessDenied)
+                }
+                completion(nil)
+                return
+            }
+            
+            initScanner(options: options, completion: completion)
+        }
+    }
+    
+    func initScanner(options: ScannerOptions, completion: @escaping (RawScannerDescription?) -> Void)  {
         textureId = textureRegistry.register(self)
         captureSession = AVCaptureSession()
         
@@ -100,6 +114,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         } catch let error {
             logError(loggerApi, error)
         }
+        
         //add video output
         let videoOutput = AVCaptureVideoDataOutput()
         videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
@@ -115,28 +130,42 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         }
         captureSession.commitConfiguration()
         captureSession.startRunning()
+
+        completion(createScannerDescription())
+    }
+    
+    func createScannerDescription() -> RawScannerDescription? {
+        guard captureDevice != nil else {
+            logError(loggerApi, ScannerHostApiError.captureDeviceNotInitialized)
+            return nil
+        }
         
         let dimensions = CMVideoFormatDescriptionGetDimensions(captureDevice.activeFormat.formatDescription)
         
         let width = Double(dimensions.width)
         let height = Double(dimensions.height)
-        let resolution = width < height ? Resolution(width: width, height: height) : Resolution(width: height, height: width)
+        let resolution = Resolution(width: height, height: width)
         let textureDescription = RawTextureDescription(id: Int32(truncatingIfNeeded: textureId), resolution: resolution)
         let analysisDescription = RawAnalysisDescription(resolution: resolution)
-        completion(RawScannerDescription(
+        
+        return RawScannerDescription(
             texture: textureDescription,
             analysis: analysisDescription
-        ))
+        )
     }
     
+    
     func dispose(completion: @escaping () -> Void) {
-        captureSession.stopRunning()
-        for input in captureSession.inputs {
-            captureSession.removeInput(input)
+        if captureSession != nil {
+            captureSession.stopRunning()
+            for input in captureSession.inputs {
+                captureSession.removeInput(input)
+            }
+            for output in captureSession.outputs {
+                captureSession.removeOutput(output)
+            }
         }
-        for output in captureSession.outputs {
-            captureSession.removeOutput(output)
-        }
+
         textureRegistry.unregisterTexture(textureId)
         
         imageBuffer = nil
@@ -148,26 +177,43 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     }
 
     func hasFlashlight() -> Bool {
-        if(captureDevice != nil){
-            return captureDevice!.hasTorch
+        guard captureDevice != nil else {
+            logError(loggerApi, ScannerHostApiError.captureDeviceNotInitialized)
+            return false
         }
-        return false
+        return captureDevice!.hasTorch && captureDevice.isTorchModeSupported(.on)
     }
     
     func getFlashlightState() -> Bool {
-        if(captureDevice != nil){
-            return captureDevice!.torchMode == .on ? true : false
+        guard captureDevice != nil else {
+            logError(loggerApi, ScannerHostApiError.captureDeviceNotInitialized)
+            return false
         }
-        return false
+        return captureDevice!.torchMode == .on ? true : false
     }
     
     func setFlashlightState(state: Bool) {
+        guard captureDevice != nil else {
+            logError(loggerApi, ScannerHostApiError.captureDeviceNotInitialized)
+            return
+        }
+        guard captureDevice.isTorchModeSupported(.on) else {
+            logError(loggerApi, ScannerHostApiError.torchModeUnsupported)
+            return
+        }
         do {
-            try captureDevice?.lockForConfiguration()
-            captureDevice?.torchMode = state ? .on : .off
-            captureDevice?.unlockForConfiguration()
-        } catch let error {
+            try captureDevice!.lockForConfiguration()
+            captureDevice!.torchMode = state ? .on : .off
+            captureDevice!.unlockForConfiguration()
+        } catch {
             logError(loggerApi, error)
         }
     }
+}
+
+enum ScannerHostApiError: Error {
+    case captureDeviceNotInitialized
+    case torchModeUnsupported
+    case cameraAccessPermanentlyDenied
+    case cameraAccessDenied
 }
