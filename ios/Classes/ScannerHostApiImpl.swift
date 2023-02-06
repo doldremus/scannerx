@@ -14,6 +14,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     var captureSession: AVCaptureSession?
     var captureDevice: AVCaptureDevice?
     var isCaptureOutputBusy: Bool
+    var isInvertColors: Bool
     
     init(_ registrar: FlutterPluginRegistrar) {
         barcodesApi = BarcodeFlutterApi(binaryMessenger: registrar.messenger())
@@ -22,6 +23,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         textureRegistry = registrar.textures()
         
         isCaptureOutputBusy = false
+        isInvertColors = false
         
         super.init()
     }
@@ -36,9 +38,6 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
         
-        guard !isCaptureOutputBusy else {
-            return
-        }
         guard imageBuffer != nil else {
             logError(loggerApi, ScannerHostApiError.ImageBufferIsNull)
             return
@@ -49,22 +48,36 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         }
         
         textureRegistry.textureFrameAvailable(textureId!)
-        
+
+        guard !isCaptureOutputBusy else {
+            return
+        }
+
         isCaptureOutputBusy = true
-        let visionImage = VisionImage(image: imageBuffer!.image)
+        isInvertColors = !isInvertColors
+        
+        var image: UIImage?
+        if isInvertColors {
+            image = imageBuffer!.inverseImage()
+        }
+        if image?.cgImage == nil {
+            image = imageBuffer!.image
+        }
+
+        let visionImage = VisionImage(image: image!)
 //        visionImage.orientation = UIDevice.current.orientation.imageOrientation(position: captureDevice.position)
 
         let format = MLKitBarcodeScanning.BarcodeFormat.all
         let barcodeOptions = BarcodeScannerOptions(formats: format)
         let scanner = BarcodeScanner.barcodeScanner(options: barcodeOptions)
-        
+
         scanner.process(visionImage) { [self] barcodes, error in
             guard error == nil else {
                 logError(loggerApi, error)
                 isCaptureOutputBusy = false
                 return
             }
-            
+
             if barcodes != nil {
                 let convertedData = barcodes!.map { $0.toApiModel }
                 barcodesApi.barcodes(barcodes: convertedData){}
@@ -120,7 +133,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         }
         
         captureSession!.beginConfiguration()
-//        captureSession.sessionPreset = AVCaptureSession.Preset.hd1280x720
+        captureSession!.sessionPreset = AVCaptureSession.Preset.hd1280x720
         
         //add device input
         do {

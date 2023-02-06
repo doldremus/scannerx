@@ -26,6 +26,16 @@ extension UIDeviceOrientation {
     }
 }
 
+extension CVImageBuffer {
+    func inverseImage() -> UIImage? {
+        let coreImage = CIImage.init(cvImageBuffer: self)
+        guard let filter = CIFilter(name: "CIColorInvert") else { return nil }
+        filter.setValue(coreImage, forKey: kCIInputImageKey)
+        guard let result = filter.value(forKey: kCIOutputImageKey) as? UIKit.CIImage else { return nil }
+        return UIImage(cgImage: CIContext(options: nil).createCGImage(result, from: result.extent)!)
+    }
+}
+
 extension Barcode {
     var toApiModel: RawBarcode {
         return RawBarcode(
