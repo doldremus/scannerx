@@ -1,6 +1,5 @@
 package dev.doldremus.scannerx
 
-import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.media.Image
 import android.util.Size
@@ -11,10 +10,7 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.common.internal.ImageConvertUtils
-import java.nio.ByteBuffer
 import java.util.concurrent.Executor
-import kotlin.experimental.xor
 
 class BarcodeAnalyzer(
     private val executor: Executor,
@@ -23,7 +19,7 @@ class BarcodeAnalyzer(
 ) : ImageAnalysis.Analyzer {
     private val recognizerOptions = BarcodeScannerOptions.Builder().setExecutor(executor).build()
     private val recognizer = BarcodeScanning.getClient(recognizerOptions)
-    private var isInvertColors = false
+    private var isInverseColors = false
 
 
     @androidx.camera.core.ExperimentalGetImage
@@ -35,9 +31,9 @@ class BarcodeAnalyzer(
             return
         }
 
-        val thread = CreateBitmapThread(imageProxy, mediaImage, isInvertColors) { image ->
+        val thread = CreateBitmapThread(imageProxy, mediaImage, isInverseColors) { image ->
             executor.execute {
-                isInvertColors = !isInvertColors
+                isInverseColors = !isInverseColors
 
                 val task: Task<List<Barcode>>
                 try {
@@ -79,7 +75,7 @@ class BarcodeAnalyzer(
 class CreateBitmapThread(
     private val imageProxy: ImageProxy,
     private val image: Image,
-    private val isInvertColors: Boolean,
+    private val isInverseColors: Boolean,
     private val done: (InputImage) -> Unit,
 ) : Thread() {
     override fun run() {
@@ -87,14 +83,9 @@ class CreateBitmapThread(
         val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
         var inputImage = InputImage.fromMediaImage(image, rotationDegrees, transform)
-        if (isInvertColors) {
-            val byteBuffer = ImageConvertUtils.getInstance().convertToNv21Buffer(inputImage, false)
-            byteBuffer.rewind()
-            val copyByteBuffer: ByteBuffer = ByteBuffer.allocate(byteBuffer.capacity())
-            while (byteBuffer.hasRemaining()){
-                copyByteBuffer.put(byteBuffer.get().xor(0xFF.toByte()))
-            }
-            inputImage = InputImage.fromByteBuffer(copyByteBuffer, inputImage.width, inputImage.height, rotationDegrees, ImageFormat.NV21)
+        if (isInverseColors) {
+            val newImage = inverseColors(inputImage, rotationDegrees)
+            if(newImage != null) inputImage = newImage
         }
 
         done(inputImage)

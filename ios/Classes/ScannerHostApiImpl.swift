@@ -14,7 +14,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     var captureSession: AVCaptureSession?
     var captureDevice: AVCaptureDevice?
     var isCaptureOutputBusy: Bool
-    var isInvertColors: Bool
+    var isInverseColors: Bool
     
     init(_ registrar: FlutterPluginRegistrar) {
         barcodesApi = BarcodeFlutterApi(binaryMessenger: registrar.messenger())
@@ -23,7 +23,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         textureRegistry = registrar.textures()
         
         isCaptureOutputBusy = false
-        isInvertColors = false
+        isInverseColors = false
         
         super.init()
     }
@@ -54,10 +54,10 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         }
 
         isCaptureOutputBusy = true
-        isInvertColors = !isInvertColors
+        isInverseColors = !isInverseColors
         
         var image: UIImage?
-        if isInvertColors {
+        if isInverseColors {
             image = imageBuffer!.inverseImage()
         }
         if image?.cgImage == nil {

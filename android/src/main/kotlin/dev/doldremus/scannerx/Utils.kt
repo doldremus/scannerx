@@ -1,8 +1,27 @@
 package dev.doldremus.scannerx
 
 import android.content.pm.PackageManager
+import android.graphics.ImageFormat
 import android.util.Log
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.common.internal.ImageConvertUtils
+import java.nio.ByteBuffer
+import kotlin.experimental.xor
 import com.google.mlkit.vision.barcode.common.Barcode as MLBarcode
+
+fun inverseColors(input: InputImage, rotationDegrees: Int): InputImage? {
+    return try{
+        val byteBuffer = ImageConvertUtils.getInstance().convertToNv21Buffer(input, false)
+        byteBuffer.rewind()
+        val copyByteBuffer: ByteBuffer = ByteBuffer.allocate(byteBuffer.capacity())
+        while (byteBuffer.hasRemaining()){
+            copyByteBuffer.put(byteBuffer.get().xor(0xFF.toByte()))
+        }
+        InputImage.fromByteBuffer(copyByteBuffer, input.width, input.height, rotationDegrees, ImageFormat.NV21)
+    }catch (e: Throwable){
+        null
+    }
+}
 
 val MLBarcode.toApiModel: RawBarcode
     get() = RawBarcode(
