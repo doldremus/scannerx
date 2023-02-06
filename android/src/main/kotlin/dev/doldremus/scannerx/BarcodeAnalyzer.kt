@@ -71,9 +71,8 @@ class BarcodeAnalyzer(
         }
     }
 
-    override fun getDefaultTargetResolution(): Size? {
-        return Size(1280, 720)
-//        return Size(720, 1280)
+    override fun getDefaultTargetResolution(): Size {
+        return Size(720, 1280)
     }
 }
 
@@ -89,17 +88,6 @@ class CreateBitmapThread(
 
         var inputImage = InputImage.fromMediaImage(image, rotationDegrees, transform)
         if (isInvertColors) {
-//            val bitmap = ImageConvertUtils.getInstance().getUpRightBitmap(inputImage)
-//            ImageConvertUtils.getInstance().convertToNv21Buffer(inputImage, false)
-//            val size = bitmap.width * bitmap.height
-//            val pixels = IntArray(size)
-//            bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-//            for(i in 0 until  size){
-//                pixels[i] = pixels[i] xor 0x00ffffff
-//            }
-//            bitmap.setPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-//            inputImage = InputImage.fromBitmap(bitmap, 0)
-
             val byteBuffer = ImageConvertUtils.getInstance().convertToNv21Buffer(inputImage, false)
             byteBuffer.rewind()
             val copyByteBuffer: ByteBuffer = ByteBuffer.allocate(byteBuffer.capacity())
