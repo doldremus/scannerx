@@ -5,18 +5,11 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.util.Size
 import android.view.Surface
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.Preview
-import androidx.camera.core.TorchState
-import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.mlkit.vision.MlKitAnalyzer
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import com.google.mlkit.vision.barcode.BarcodeScanning
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.PluginRegistry
@@ -63,7 +56,7 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
         return permissionsListener?.onRequestPermissionsResult(requestCode, permissions, grantResults) ?: false
     }
 
-    // TODO at the moment there is no check for a permanent denying
+    // TODO at the moment there is no check for a permanent permissions denying
     override fun requestPermissions(callback: (PermissionsResponse) -> Unit) {
         permissionsListener = PluginRegistry.RequestPermissionsResultListener { requestCode, _, grantResults ->
             if (requestCode != PERMISSIONS_REQUEST_CODE) {
@@ -152,19 +145,12 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
     }
 
     private fun createImageAnalysis(executor: Executor, targetResolution: Size?): ImageAnalysis {
-        val barcodeScanner = BarcodeScanning.getClient()
-        val detectors = listOf(barcodeScanner)
-        val analyzer = MlKitAnalyzer(detectors, ImageAnalysis.COORDINATE_SYSTEM_ORIGINAL, executor) {
-            try {
-                val barcodes = it.getValue(barcodeScanner)
-                if (!barcodes.isNullOrEmpty()) {
-                    val convertedData = barcodes.map { b -> b.toApiModel }
-                    barcodesApi!!.barcodes(convertedData) {}
-                } else {
-                    barcodesApi!!.barcodes(emptyList()) {}
-                }
-            } catch (e: Throwable) {
-                logError(loggerApi, e)
+        val analyzer = BarcodeAnalyzer(executor, loggerApi) {
+            if (it.isNotEmpty()) {
+                val convertedData = it.map { b -> b.toApiModel }
+                barcodesApi!!.barcodes(convertedData) {}
+            } else {
+                barcodesApi!!.barcodes(emptyList()) {}
             }
         }
 
