@@ -60,7 +60,7 @@ fun barcodeFormatFromRaw(format: Int): BarcodeFormat {
 }
 
 fun logError(api: LoggerFlutterApi?, exception: Throwable) {
-    var className = exception.message
+    var className = exception.javaClass.simpleName
     if (exception is PluginException) {
         className = exception.code
     }
