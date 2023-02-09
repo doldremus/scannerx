@@ -92,6 +92,6 @@ class CreateBitmapThread(
     }
 }
 
-class BarcodesAnalyzerImageIsNull : Exception()
-class BarcodesAnalyzerFailedToProcessImage : Exception()
-class BarcodesAnalyzerTaskIsCanceled : Exception()
+class BarcodesAnalyzerImageIsNull : PluginException("BarcodesAnalyzerImageIsNull")
+class BarcodesAnalyzerFailedToProcessImage : PluginException("BarcodesAnalyzerFailedToProcessImage")
+class BarcodesAnalyzerTaskIsCanceled : PluginException("BarcodesAnalyzerTaskIsCanceled")

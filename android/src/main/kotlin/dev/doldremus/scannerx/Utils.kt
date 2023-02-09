@@ -94,14 +94,4 @@ fun hasAllPermissionsGranted(grantResults: IntArray): Boolean {
     return true
 }
 
-open class PluginException : Exception {
-    constructor(code: String) : super() {
-        this.code = code
-    }
-
-    constructor(code: String, message: String) : super(message) {
-        this.code = code
-    }
-
-    val code: String
-}
+open class PluginException(val code: String, message: String? = null) : Exception(message)
