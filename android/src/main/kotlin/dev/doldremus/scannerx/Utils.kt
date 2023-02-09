@@ -10,15 +10,15 @@ import kotlin.experimental.xor
 import com.google.mlkit.vision.barcode.common.Barcode as MLBarcode
 
 fun inverseColors(input: InputImage, rotationDegrees: Int): InputImage? {
-    return try{
+    return try {
         val byteBuffer = ImageConvertUtils.getInstance().convertToNv21Buffer(input, false)
         byteBuffer.rewind()
         val copyByteBuffer: ByteBuffer = ByteBuffer.allocate(byteBuffer.capacity())
-        while (byteBuffer.hasRemaining()){
+        while (byteBuffer.hasRemaining()) {
             copyByteBuffer.put(byteBuffer.get().xor(0xFF.toByte()))
         }
         InputImage.fromByteBuffer(copyByteBuffer, input.width, input.height, rotationDegrees, ImageFormat.NV21)
-    }catch (e: Throwable){
+    } catch (e: Throwable) {
         null
     }
 }
@@ -60,8 +60,13 @@ fun barcodeFormatFromRaw(format: Int): BarcodeFormat {
 }
 
 fun logError(api: LoggerFlutterApi?, exception: Throwable) {
+    var className = exception.message
+    if (exception is PluginException) {
+        className = exception.code
+    }
+
     val error = LoggerError(
-        className = exception.javaClass.simpleName,
+        className = className,
         cause = exception.cause.toString(),
         stackTrace = Log.getStackTraceString(exception),
         message = exception.message,
@@ -87,4 +92,16 @@ fun hasAllPermissionsGranted(grantResults: IntArray): Boolean {
         }
     }
     return true
+}
+
+open class PluginException : Exception {
+    constructor(code: String) : super() {
+        this.code = code
+    }
+
+    constructor(code: String, message: String) : super(message) {
+        this.code = code
+    }
+
+    val code: String
 }

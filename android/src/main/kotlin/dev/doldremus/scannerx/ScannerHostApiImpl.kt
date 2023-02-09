@@ -235,5 +235,5 @@ class ScannerHostApiImpl : ScannerHostApi, PluginRegistry.RequestPermissionsResu
     }
 }
 
-class CameraAccessDenied : Exception()
-class CameraAccessPermanentlyDenied : Exception()
+class CameraAccessDenied : PluginException("CameraAccessDenied")
+class CameraAccessPermanentlyDenied : PluginException("CameraAccessPermanentlyDenied")
