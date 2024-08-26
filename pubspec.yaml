@@ -1,6 +1,6 @@
 name: scannerx
 description: Flutter scanner plugin that uses CameraX on Android and native API on iOS. The scanner preview widget can be customized
-version: 0.0.1
+version: 0.0.2
 homepage:
 
 environment:
