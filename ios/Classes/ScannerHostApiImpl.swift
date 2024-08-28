@@ -120,37 +120,18 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
     func initScanner(options: ScannerOptions, completion: @escaping (RawScannerDescription?) -> Void)  {
         textureId = textureRegistry.register(self)
         captureSession = AVCaptureSession()
-        if #available(iOS 13.0, *) {
-            captureDevice = AVCaptureDevice.DiscoverySession(
-                deviceTypes: [.builtInTripleCamera, .builtInDualCamera],
-                mediaType: .video,
-                position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
-            ).devices.first
-        } else {
-            captureDevice = AVCaptureDevice.DiscoverySession(
-                deviceTypes: [.builtInDualCamera],
-                mediaType: .video,
-                position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
-            ).devices.first
-        }
         
-        if(captureDevice == nil){
-            captureDevice = AVCaptureDevice.DiscoverySession(
-                deviceTypes: [.builtInWideAngleCamera],
-                mediaType: .video,
-                position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
-            ).devices.first
-        }
+        captureDevice = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInDualCamera],
+            mediaType: .video,
+            position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
+        ).devices.first
 
         guard captureDevice != nil else {
             logError(loggerApi, ScannerHostApiError.SuitableDeviceNotFound)
             return
         }
-        
-        if(captureDevice!.isFocusModeSupported(AVCaptureDevice.FocusMode.continuousAutoFocus)){
-            captureDevice!.focusMode = AVCaptureDevice.FocusMode.continuousAutoFocus;
-        }
-        
+
         captureSession!.beginConfiguration()
         captureSession!.sessionPreset = AVCaptureSession.Preset.hd1280x720
         
