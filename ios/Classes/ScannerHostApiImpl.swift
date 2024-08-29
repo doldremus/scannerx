@@ -121,11 +121,27 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         textureId = textureRegistry.register(self)
         captureSession = AVCaptureSession()
         
-        captureDevice = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.builtInDualCamera],
-            mediaType: .video,
-            position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
-        ).devices.first
+        if #available(iOS 13.0, *) {
+            captureDevice = AVCaptureDevice.DiscoverySession(
+                deviceTypes: [.builtInTripleCamera],
+                mediaType: .video,
+                position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
+            ).devices.first
+        }
+        if(captureDevice == nil){
+            captureDevice = AVCaptureDevice.DiscoverySession(
+                deviceTypes: [.builtInDualCamera],
+                mediaType: .video,
+                position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
+            ).devices.first
+        }
+        if(captureDevice == nil){
+            captureDevice = AVCaptureDevice.DiscoverySession(
+                deviceTypes: [.builtInWideAngleCamera],
+                mediaType: .video,
+                position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
+            ).devices.first
+        }
 
         guard captureDevice != nil else {
             logError(loggerApi, ScannerHostApiError.SuitableDeviceNotFound)
