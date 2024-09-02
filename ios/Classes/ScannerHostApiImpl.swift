@@ -121,27 +121,11 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         textureId = textureRegistry.register(self)
         captureSession = AVCaptureSession()
         
-        if #available(iOS 13.0, *) {
-            captureDevice = AVCaptureDevice.DiscoverySession(
-                deviceTypes: [.builtInTripleCamera],
-                mediaType: .video,
-                position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
-            ).devices.first
-        }
-        if(captureDevice == nil){
-            captureDevice = AVCaptureDevice.DiscoverySession(
-                deviceTypes: [.builtInDualCamera],
-                mediaType: .video,
-                position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
-            ).devices.first
-        }
-        if(captureDevice == nil){
-            captureDevice = AVCaptureDevice.DiscoverySession(
-                deviceTypes: [.builtInWideAngleCamera],
-                mediaType: .video,
-                position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
-            ).devices.first
-        }
+        captureDevice = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInWideAngleCamera],
+            mediaType: .video,
+            position: options.lensDirection == .front ? AVCaptureDevice.Position.front : .back
+        ).devices.first
 
         guard captureDevice != nil else {
             logError(loggerApi, ScannerHostApiError.SuitableDeviceNotFound)
@@ -155,6 +139,7 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
         do {
             let input = try AVCaptureDeviceInput(device: captureDevice!)
             captureSession!.addInput(input)
+            setRecommendedZoomFactor(videoDeviceInput: input);
         } catch let error {
             logError(loggerApi, error)
         }
@@ -172,10 +157,54 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
                 connection.isVideoMirrored = true
             }
         }
+        
         captureSession!.commitConfiguration()
         captureSession!.startRunning()
 
         completion(createScannerDescription())
+    }
+    
+    func setRecommendedZoomFactor(videoDeviceInput: AVCaptureDeviceInput) {
+        /*
+            Optimize the user experience for scanning QR codes down to sizes of 20mm x 20mm.
+            When scanning a QR code of that size, the user may need to get closer than the camera's minimum focus distance to fill the rect of interest.
+            To have the QR code both fill the rect and still be in focus, we may need to apply some zoom.
+        */
+        if #available(iOS 15.0, *) {
+            let minimumCodeSize : Float = 30.0;
+            let rectOfInterestWidth : Float = 0.8;
+            let deviceMinimumFocusDistance = Float(videoDeviceInput.device.minimumFocusDistance)
+            guard deviceMinimumFocusDistance != -1 else { return }
+            
+            let deviceFieldOfView = videoDeviceInput.device.activeFormat.videoFieldOfView
+            let minimumSubjectDistanceForCode = minimumSubjectDistanceForCode(fieldOfView: deviceFieldOfView,
+                                                                              minimumCodeSize: minimumCodeSize,
+                                                                              previewFillPercentage: rectOfInterestWidth)
+            if minimumSubjectDistanceForCode < deviceMinimumFocusDistance {
+                let zoomFactor = deviceMinimumFocusDistance / minimumSubjectDistanceForCode
+                do {
+                    try videoDeviceInput.device.lockForConfiguration()
+                    videoDeviceInput.device.videoZoomFactor = CGFloat(zoomFactor)
+                    videoDeviceInput.device.unlockForConfiguration()
+                } catch {
+                    print("Could not lock for configuration: \(error)")
+                }
+            }
+        }
+    }
+    
+    private func minimumSubjectDistanceForCode(fieldOfView: Float, minimumCodeSize: Float, previewFillPercentage: Float) -> Float {
+        /*
+            Given the camera horizontal field of view, we can compute the distance (mm) to make a code
+            of minimumCodeSize (mm) fill the previewFillPercentage.
+         */
+        let radians = degreesToRadians(fieldOfView / 2)
+        let filledCodeSize = minimumCodeSize / previewFillPercentage
+        return filledCodeSize / tan(radians)
+    }
+    
+    private func degreesToRadians(_ degrees: Float) -> Float {
+        return degrees * Float.pi / 180
     }
     
     func createScannerDescription() -> RawScannerDescription? {
