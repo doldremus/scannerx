@@ -171,8 +171,8 @@ public class ScannerHostApiImpl: NSObject, ScannerHostApi, FlutterTexture, AVCap
             To have the QR code both fill the rect and still be in focus, we may need to apply some zoom.
         */
         if #available(iOS 15.0, *) {
-            let minimumCodeSize : Float = 30.0;
-            let rectOfInterestWidth : Float = 0.8;
+            let minimumCodeSize : Float = 70.0;
+            let rectOfInterestWidth : Float = 1.0;
             let deviceMinimumFocusDistance = Float(videoDeviceInput.device.minimumFocusDistance)
             guard deviceMinimumFocusDistance != -1 else { return }
             
